@@ -29,7 +29,7 @@ module uart_tx(
 				end
 			end else begin
 				if (start) begin
-					stage <= 10;
+					stage <= 9;
 					cnt <= period;
 					datah <= {data, 1'b0};
 				end
