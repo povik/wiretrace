@@ -1,0 +1,15 @@
+set_io clk24 20
+
+set_io led_activity 41
+set_io led_overflow 40
+
+set_io tx 21
+
+set_io probes[0] 2
+set_io probes[1] 48
+set_io probes[2] 47
+set_io probes[3] 46
+set_io probes[4] 45
+set_io probes[5] 44
+set_io probes[6] 43
+set_io probes[7] 42

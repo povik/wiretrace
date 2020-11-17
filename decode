@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import struct
+import sys
+import argparse
+
+def main(f=sys.stdin.buffer):
+	parser = argparse.ArgumentParser(description='')
+	parser.add_argument('-n', dest='names', default="", help='comma-separated wire labels')
+	parser.add_argument('-f', type=float, default=24.0, help='sampling frequency in MHz')
+	parser.add_argument('-F', dest='frame', default="", help='frame wire')
+	parser.add_argument('-w', type=str, dest='vcd', default="", help='name for a VCD file to write')
+	args = parser.parse_args()
+	period = 1.0 / args.f
+	names = args.names.split(',')
+	names = [ (names[i] if (i<len(names) and names[i]!="") else "wire%d" % i) for i in range(8)]
+
+	framepol = True
+	if args.frame in names:
+		frame = names.index(args.frame)
+	elif len(args.frame)>0 and args.frame[0] == '~' and args.frame[1:] in names:
+		frameinv = False
+		frame = names.index(args.frame[1:])
+	else:
+		frame = None
+
+	w = None
+	if args.vcd != "":
+		import vcd
+		wf = open(args.vcd, "w")
+		w = vcd.VCDWriter(wf, timescale="1 ps")
+		wvars = [w.register_var('', n, 'wire', size=1) for n in names]
+
+	oldprobes = 0
+	framestamp = 0
+	prevstamp = 0
+	stampbase = 0
+	first = True
+	while True:
+		while True:
+			m = f.read(1)
+			if m == b'\xaa':
+				break
+			if m == b'': # EOF
+				return
+			print("bad bytes %s" % m)
+		probes, stamp = struct.unpack('>BI', f.read(5))
+
+		if stamp < prevstamp:
+			stampbase += 2**32
+		prevstamp = stamp
+
+		line = "   "
+		if frame is not None:
+			old = (oldprobes&(1<<frame)) != 0
+			new = (probes&(1<<frame)) != 0
+			if old!=new and new==framepol:
+				framestamp = stamp
+				line = " X "
+
+		time = float((stamp-framestamp)%(2**32))*period
+		line += "{:=12.1f} ".format(time)
+
+		if first:
+			stampbase = -stamp
+
+		for i, n in enumerate(names):
+			old = (oldprobes&(1<<i)) != 0
+			new = (probes&(1<<i)) != 0
+
+			if old!=new or first:
+				if w is not None:
+					w.change(wvars[i], int(1000*period*(stampbase+stamp)), new)
+				line += " {}{}".format(" " if new else "~", n)
+			else:
+				line += "  " + " "*len(n)
+		print(line); sys.stdout.flush(); oldprobes=probes
+		first = False
+
+if __name__ == "__main__":
+	main()
