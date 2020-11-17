@@ -23,13 +23,13 @@ Features:
 
 ## Usage
 
-Build the `system.bin` with `make`, or download a binary from a release. Program the FPGA, then on your PC set the serial line baudrate to 112500 and connect the line to the standard input of `./decode`.
+Build the `system.bin` with `make`, or download a binary from a release. Program the FPGA, then on your PC set the serial line baudrate to 115200 and connect the line to the standard input of `./decode`.
 
-After programming the FPGA, run e.g.:
+After programming the FPGA, with wiretrace connected on e.g. `/dev/ttyUSB0`, run from directory of the repo:
 
 ```
- # stty -F /dev/ttyUSB0 115200
- # PATH_TO_REPO/decode < /dev/ttyUSB0
+ # ./setserial.sh /dev/ttyUSB0
+ # ./decode < /dev/ttyUSB0
 ```
 
 ### Decoding options
